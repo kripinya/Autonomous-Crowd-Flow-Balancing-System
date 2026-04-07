@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Autonomous Crowd Flow Balancing Assistant — AI-powered crowd monitoring dashboard." />
+  <title>Autonomous Crowd Flow Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header__brand">
+      <span class="header__icon">◉</span>
+      <h1 class="header__title">Autonomous Crowd Flow Assistant</h1>
+    </div>
+    <div class="header__status">
+      <span class="status-dot"></span>
+      Live Monitoring
+    </div>
+  </header>
+
+  <!-- Dashboard -->
+  <main class="dashboard">
+
+    <!-- Left Panel — Crowd Data -->
+    <section class="panel panel--crowd" id="crowd-panel">
+      <h2 class="panel__title">📊 Crowd Data</h2>
+
+      <!-- Gate A -->
+      <div class="gate-card" id="gate-a">
+        <div class="gate-card__header">
+          <span class="gate-card__name">Gate A</span>
+          <span class="gate-card__badge badge--low" id="gate-a-badge">Low</span>
+        </div>
+        <div class="gate-card__bar">
+          <div class="bar-fill bar-fill--low" id="gate-a-bar" style="width: 28%"></div>
+        </div>
+        <div class="gate-card__stats">
+          <span>Queue: <strong id="gate-a-queue">12</strong></span>
+          <span>Inflow: <strong id="gate-a-inflow">15</strong>/min</span>
+          <span>Outflow: <strong id="gate-a-outflow">18</strong>/min</span>
+        </div>
+        <div class="risk-flag risk-flag--ok" id="gate-a-risk">✓ Normal</div>
+      </div>
+
+      <!-- Gate B -->
+      <div class="gate-card" id="gate-b">
+        <div class="gate-card__header">
+          <span class="gate-card__name">Gate B</span>
+          <span class="gate-card__badge badge--medium" id="gate-b-badge">Medium</span>
+        </div>
+        <div class="gate-card__bar">
+          <div class="bar-fill bar-fill--medium" id="gate-b-bar" style="width: 55%"></div>
+        </div>
+        <div class="gate-card__stats">
+          <span>Queue: <strong id="gate-b-queue">47</strong></span>
+          <span>Inflow: <strong id="gate-b-inflow">40</strong>/min</span>
+          <span>Outflow: <strong id="gate-b-outflow">32</strong>/min</span>
+        </div>
+        <div class="risk-flag risk-flag--ok" id="gate-b-risk">✓ Normal</div>
+      </div>
+
+      <!-- Gate C -->
+      <div class="gate-card" id="gate-c">
+        <div class="gate-card__header">
+          <span class="gate-card__name">Gate C</span>
+          <span class="gate-card__badge badge--high" id="gate-c-badge">High</span>
+        </div>
+        <div class="gate-card__bar">
+          <div class="bar-fill bar-fill--high" id="gate-c-bar" style="width: 87%"></div>
+        </div>
+        <div class="gate-card__stats">
+          <span>Queue: <strong id="gate-c-queue">134</strong></span>
+          <span>Inflow: <strong id="gate-c-inflow">70</strong>/min</span>
+          <span>Outflow: <strong id="gate-c-outflow">45</strong>/min</span>
+        </div>
+        <div class="risk-flag risk-flag--active" id="gate-c-risk">⚠ Congestion Risk</div>
+      </div>
+    </section>
+
+    <!-- Right Panel — AI Assistant -->
+    <section class="panel panel--ai" id="ai-panel">
+      <h2 class="panel__title">🤖 AI Decision Engine</h2>
+
+      <!-- Alerts -->
+      <div class="ai-section">
+        <h3 class="ai-section__title">⚠️ Alerts</h3>
+        <ul class="ai-list" id="alerts-list">
+          <li class="ai-list__item ai-list__item--danger">Gate C exceeding 85% capacity</li>
+          <li class="ai-list__item ai-list__item--warn">Gate B approaching moderate congestion</li>
+        </ul>
+      </div>
+
+      <!-- Predicted Congestion -->
+      <div class="ai-section">
+        <h3 class="ai-section__title">📈 Predicted Congestion</h3>
+        <ul class="ai-list" id="predictions-list">
+          <li class="ai-list__item">Gate C → likely overcrowded in ~10 min</li>
+          <li class="ai-list__item">Gate A → stable for next 30 min</li>
+        </ul>
+      </div>
+
+      <!-- Suggested Actions -->
+      <div class="ai-section">
+        <h3 class="ai-section__title">💡 Suggested Actions</h3>
+        <ul class="ai-list" id="actions-list">
+          <li class="ai-list__item ai-list__item--action">Redirect foot traffic from Gate C → Gate A</li>
+          <li class="ai-list__item ai-list__item--action">Deploy 2 additional staff to Gate C</li>
+          <li class="ai-list__item ai-list__item--action">Open overflow lane at Gate B</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Simulate Button -->
+  <div class="btn-container">
+    <button class="btn-simulate" id="simulate-btn">⟳ Simulate Update</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
