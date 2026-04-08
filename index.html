@@ -117,6 +117,73 @@
     </section>
   </main>
 
+  <!-- Venue Map -->
+  <section class="map-section" id="map-section">
+    <div class="map-panel">
+      <h2 class="panel__title">🗺️ Venue Map — Gate Density</h2>
+      <div class="map-legend">
+        <span class="legend-item"><span class="legend-dot legend-dot--green"></span> Low</span>
+        <span class="legend-item"><span class="legend-dot legend-dot--yellow"></span> Medium</span>
+        <span class="legend-item"><span class="legend-dot legend-dot--red"></span> High</span>
+      </div>
+      <div class="map-container" id="map-container">
+        <!-- Grid background -->
+        <div class="map-grid"></div>
+
+        <!-- Venue outline -->
+        <svg class="map-venue-svg" viewBox="0 0 600 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer boundary -->
+          <rect x="40" y="30" width="520" height="300" rx="18" stroke="#2a3140" stroke-width="2" fill="rgba(22,27,34,0.6)" />
+          <!-- Inner areas -->
+          <rect x="70" y="60" width="180" height="120" rx="10" stroke="#2a3140" stroke-width="1.5" stroke-dasharray="6 4" fill="rgba(28,34,48,0.4)" />
+          <text x="160" y="130" text-anchor="middle" fill="#5c6780" font-size="13" font-family="Inter, sans-serif">Main Hall</text>
+
+          <rect x="290" y="60" width="240" height="120" rx="10" stroke="#2a3140" stroke-width="1.5" stroke-dasharray="6 4" fill="rgba(28,34,48,0.4)" />
+          <text x="410" y="130" text-anchor="middle" fill="#5c6780" font-size="13" font-family="Inter, sans-serif">Exhibition Area</text>
+
+          <rect x="70" y="210" width="460" height="90" rx="10" stroke="#2a3140" stroke-width="1.5" stroke-dasharray="6 4" fill="rgba(28,34,48,0.4)" />
+          <text x="300" y="262" text-anchor="middle" fill="#5c6780" font-size="13" font-family="Inter, sans-serif">Concourse</text>
+        </svg>
+
+        <!-- Gate Markers (positioned absolutely) -->
+        <div class="map-marker" id="map-marker-a" style="left: 6%; top: 35%;">
+          <div class="map-marker__pulse"></div>
+          <div class="map-marker__dot"></div>
+          <div class="map-marker__label">Gate A<br><span class="map-marker__pct" id="map-pct-a">28%</span></div>
+        </div>
+
+        <div class="map-marker" id="map-marker-b" style="left: 50%; top: 6%;">
+          <div class="map-marker__pulse"></div>
+          <div class="map-marker__dot"></div>
+          <div class="map-marker__label">Gate B<br><span class="map-marker__pct" id="map-pct-b">55%</span></div>
+        </div>
+
+        <div class="map-marker" id="map-marker-c" style="right: 6%; top: 55%;">
+          <div class="map-marker__pulse"></div>
+          <div class="map-marker__dot"></div>
+          <div class="map-marker__label">Gate C<br><span class="map-marker__pct" id="map-pct-c">87%</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Before vs After Comparison -->
+  <section class="comparison-section" id="comparison-section" style="display: none;">
+    <div class="comparison-panel">
+      <h2 class="panel__title">🔄 Feedback Loop — Before vs After</h2>
+      <div class="compare-header">
+        <div class="compare-col-label">Gate</div>
+        <div class="compare-col-label">Before</div>
+        <div class="compare-col-label"></div>
+        <div class="compare-col-label">After</div>
+        <div class="compare-col-label">Change</div>
+      </div>
+      <div id="comparison-body">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
   <!-- Simulate Button -->
   <div class="btn-container">
     <button class="btn-simulate" id="simulate-btn">⟳ Simulate Update</button>

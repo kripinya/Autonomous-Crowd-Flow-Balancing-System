@@ -222,6 +222,9 @@ function simulate() {
 
   // 7. Render before vs after comparison
   renderComparison(before, after);
+
+  // 8. Update venue map
+  renderMap();
 }
 
 // ===== RENDERING — GATE CARDS =====
@@ -320,7 +323,25 @@ function appendLi(ul, text, className) {
   ul.appendChild(li);
 }
 
+// ===== RENDERING — VENUE MAP =====
+
+function renderMap() {
+  for (const id of ['a', 'b', 'c']) {
+    const gate = gates[id];
+    const marker = document.getElementById(`map-marker-${id}`);
+    const pctLabel = document.getElementById(`map-pct-${id}`);
+    
+    // Determine level: low, medium, high
+    const level = getDensityLevel(gate.density).toLowerCase();
+    
+    // Update marker styling and density text
+    marker.className = `map-marker map-marker--${level}`;
+    pctLabel.textContent = `${gate.density}%`;
+  }
+}
+
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
+  renderMap(); // Initial map render
   document.getElementById('simulate-btn').addEventListener('click', simulate);
 });
