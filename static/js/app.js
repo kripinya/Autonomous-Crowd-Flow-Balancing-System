@@ -1,3 +1,14 @@
+// ===== VENUE CONFIGURATION ===== //
+const STADIUM_CENTER = [51.556020, -0.279610];
+const gateCoords = {
+  a: { name: 'North Gate', coords: [51.55734, -0.27964] },
+  b: { name: 'South Gate', coords: [51.55462, -0.27958] },
+  c: { name: 'East Gate', coords: [51.55610, -0.27645] },
+};
+
+let map;
+let mapCircles = {};
+
 // ===== FRONTEND RENDERING CLIENT ===== //
 
 // Update the badge header
@@ -7,40 +18,57 @@ function renderContext(ctxText) {
 
 // Color logic for SVG Map
 function getZoneColor(level) {
-  if (level === 'High') return 'var(--danger)';
-  if (level === 'Medium') return 'var(--warning)';
-  return 'var(--safe)';
+  if (level === 'High') return '#dc2626'; // var(--danger)
+  if (level === 'Medium') return '#d97706'; // var(--warning)
+  return '#059669'; // var(--safe)
 }
 
-// Update the SVG zones based on backend data
-function updateMap(stateMap) {
+// Initialize Leaflet Map
+function initMap() {
+  // Dark/Carto styled free map tiles
+  map = L.map('venue-map', {
+    zoomControl: false,
+    attributionControl: false
+  }).setView(STADIUM_CENTER, 16);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  // Init map circles for gates
   for (const id of ['a', 'b', 'c']) {
-    const state = stateMap[id];
-    const circle = document.getElementById(`circle-${id}`);
-    if (circle) {
-      circle.style.fill = getZoneColor(state.level);
-      
-      // Pulse if dangerous
-      if (state.level === 'High') {
-        circle.style.animation = 'pulse 1s infinite alternate';
-      } else {
-        circle.style.animation = 'none';
-      }
-    }
+    mapCircles[id] = L.circle(gateCoords[id].coords, {
+      color: getZoneColor('Low'),
+      fillColor: getZoneColor('Low'),
+      fillOpacity: 0.6,
+      radius: 40
+    }).addTo(map);
+    
+    // Add textual Tooltips
+    mapCircles[id].bindTooltip(gateCoords[id].name, {
+      permanent: true, 
+      direction: "center",
+      className: "map-label"
+    });
   }
 }
 
-// Add a quick pulse animation dynamically for danger state
-if (!document.getElementById('pulse-style')) {
-  const style = document.createElement('style');
-  style.id = 'pulse-style';
-  style.innerHTML = `
-    @keyframes pulse {
-      0% { transform: scale(1); fill-opacity: 1; }
-      100% { transform: scale(1.3); fill-opacity: 0.6; }
-    }
-  `;
-  document.head.appendChild(style);
+// Update the Leaflet map zones based on backend data
+function updateMap(stateMap) {
+  if (!map) return;
+  for (const id of ['a', 'b', 'c']) {
+    const state = stateMap[id];
+    const circle = mapCircles[id];
+    const color = getZoneColor(state.level);
+    
+    const dynamicRadius = 25 + (state.density * 1.5);
+    
+    circle.setStyle({
+      fillColor: color,
+      color: color
+    });
+    circle.setRadius(dynamicRadius);
+  }
 }
 
 // Render the simple Action Feed
@@ -62,7 +90,7 @@ function renderFeed(decisions, afterState) {
   decisions.forEach(d => {
     if (d.risk === 'HIGH') {
       highestRisk = 'HIGH';
-      primaryAlertText = d.prediction; // Contains the friendly explanation
+      primaryAlertText = d.prediction;
     } else if (d.risk === 'MODERATE' && highestRisk !== 'HIGH') {
       highestRisk = 'MODERATE';
       primaryAlertText = d.prediction;
@@ -91,7 +119,7 @@ function renderFeed(decisions, afterState) {
     alertCard.className = 'alert-card danger';
     alertCard.style.background = 'var(--danger-bg)';
     alertCard.style.borderColor = 'var(--danger)';
-    alertCard.style.color = '#991b1b';
+    alertCard.style.color = '#7f1d1d';
     alertCard.querySelector('h3').innerText = 'Danger: Overcrowding Detected!';
     alertReason.innerText = primaryAlertText;
   } else if (highestRisk === 'MODERATE') {
@@ -107,7 +135,7 @@ function renderFeed(decisions, afterState) {
     alertCard.className = 'alert-card safe';
     alertCard.style.background = 'var(--safe-bg)';
     alertCard.style.borderColor = 'var(--safe)';
-    alertCard.style.color = '#166534';
+    alertCard.style.color = '#14532d';
     alertCard.querySelector('h3').innerText = 'All Clear';
     alertReason.innerText = 'Stadium levels look totally fine right now.';
   }
@@ -173,6 +201,7 @@ async function triggerSimulation() {
 
 // ===== INIT ===== //
 document.addEventListener('DOMContentLoaded', () => {
+  initMap();
   loadInitialState();
   document.getElementById('simulate-btn').addEventListener('click', triggerSimulation);
 });
