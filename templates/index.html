@@ -13,8 +13,8 @@
 <body>
 
   <!-- Top Navigation (Extremely Simple) -->
-  <header class="app-header">
-    <div class="logo">Smart Event Manager</div>
+  <header class="app-header" role="banner">
+    <div class="logo" role="heading" aria-level="1">Smart Event Manager</div>
     <div class="context-badge" id="weather-phase-badge">
       Loading Event Info...
     </div>
@@ -27,8 +27,8 @@
       <h2>Stadium Map Overview</h2>
       <p class="subtitle">Colors show how crowded areas are right now.</p>
       
-      <div class="stadium-map-wrapper">
-        <div id="venue-map" style="height: 400px; width: 100%; border-radius: 8px; z-index: 1;"></div>
+      <div class="stadium-map-wrapper" aria-label="Interactive Stadium Map Rendering">
+        <div id="venue-map" style="height: 400px; width: 100%; border-radius: 8px; z-index: 1;" role="application" aria-label="Interactive leaflet map"></div>
 
         <!-- Current Status Legends -->
         <div class="legend-box">
@@ -41,11 +41,11 @@
     </section>
 
     <!-- RIGHT SIDE: AI Assistant / Action Plan -->
-    <section class="action-panel">
+    <section class="action-panel" aria-label="AI Decision Control Panel">
       
       <div class="panel-header">
-        <h2>AI Assistant</h2>
-        <button id="simulate-btn" class="big-action-button">
+        <h2 id="ai-assistant-header">AI Assistant</h2>
+        <button id="simulate-btn" class="big-action-button" aria-label="Trigger AI Venue Analysis">
           Analyze & Fix Issues
         </button>
       </div>
@@ -53,9 +53,9 @@
       <div class="assistant-feed">
         <p class="simple-instruction">Click the top button to scan the stadium.</p>
         
-        <div id="ai-response-area" style="display: none;">
+        <div id="ai-response-area" style="display: none;" aria-live="polite">
           <!-- High Alert Card -->
-          <div class="alert-card danger" id="primary-alert" style="display: none;">
+          <div class="alert-card danger" id="primary-alert" style="display: none;" role="alert">
             <h3>Danger: Overcrowding Detected!</h3>
             <p id="alert-reason">East Gate is getting too packed.</p>
           </div>
@@ -69,7 +69,7 @@
           </div>
 
           <!-- Proof / Result Card -->
-          <div class="result-card" id="results-card">
+          <div class="result-card" id="results-card" role="status">
             <h3>Predicted Result</h3>
             <p id="result-summary">It will become safe.</p>
           </div>
