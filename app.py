@@ -81,6 +81,10 @@ class DecisionResponse(BaseModel):
     prediction: str
     actions: List[str]
 
+class AgentQuery(BaseModel):
+    """Pydantic model for user chat queries."""
+    query: str
+
 # --- APP INITIALIZATION ---
 app = Flask(__name__)
 
@@ -312,6 +316,42 @@ def snap_states(data_source: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, A
         gid: {**g, 'level': get_level(g['density'])} 
         for gid, g in data_source.items()
     }
+
+@app.route('/api/agent', methods=['POST'])
+@limiter.limit("20 per minute")
+def agent_assistant():
+    """Agentic AI endpoint for attendee route assistance."""
+    try:
+        data = request.get_json() or {}
+        query_data = AgentQuery(**data)
+    except ValidationError as e:
+        return jsonify(error="Invalid query format"), 400
+
+    ctx = get_current_context()
+    gate_info = "\\n".join([f"- {g['name']}: {g['density']}% density, Queue: {g['queue']} people" for g in gates.values()])
+    
+    if model:
+        try:
+            prompt = f\"\"\"
+            You are an Agentic AI event assistant at a stadium. Your job is to help an attendee find the best way in.
+            
+            Current Venue Context: Phase: {ctx.phase}, Weather: {ctx.weather}
+            Current Gate Status:
+            {gate_info}
+            
+            Attendee question: "{query_data.query}"
+            
+            Provide a short, friendly, and highly specific recommendation for which gate they should head to based on the lowest density and queue. Keep it under 3 sentences.
+            \"\"\"
+            response = model.generate_content(prompt)
+            return jsonify({'reply': response.text.strip()})
+        except Exception as e:
+            logger.error(f"Agent Chat Error: {e}")
+            
+    # Heuristic fallback
+    best_gate = min(gates.values(), key=lambda x: x['density'])
+    reply = f"Hi there! Right now, the best way to get in is the {best_gate['name']}. It only has a {best_gate['queue']} person queue. Head there for the fastest entry!"
+    return jsonify({'reply': reply})
 
 # --- ERROR HANDLERS ---
 @app.errorhandler(429)

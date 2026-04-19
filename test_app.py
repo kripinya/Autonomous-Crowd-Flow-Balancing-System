@@ -122,3 +122,32 @@ def test_rate_limiting():
         rv = client.get('/api/simulate')
         assert rv.status_code == 429
         assert "Rate limit exceeded" in rv.get_json()['error']
+
+@patch('app.model')
+def test_agent_api_endpoint(mock_model, client):
+    """Verifies the Agentic AI chat endpoint returns correct responses."""
+    mock_response = MagicMock()
+    mock_response.text = "You should head to the South Gate."
+    mock_model.generate_content.return_value = mock_response
+
+    rv = client.post('/api/agent', json={'query': 'Where should I go?'})
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert 'reply' in data
+    assert 'South Gate' in data['reply']
+
+@patch('app.model')
+def test_agent_api_fallback(mock_model, client):
+    """Verifies the heuristic fallback for the Agentic AI works if LLM fails."""
+    mock_model.generate_content.side_effect = Exception("API Outage")
+    
+    # Set densities so we know which gate should be recommended
+    gates['a']['density'] = 90
+    gates['b']['density'] = 10
+    gates['c']['density'] = 50
+    
+    rv = client.post('/api/agent', json={'query': 'Which gate is best?'})
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert 'South Gate' in data['reply']  # 'b' is South Gate
+

@@ -206,3 +206,82 @@ document.addEventListener('DOMContentLoaded', () => {
   loadInitialState();
   document.getElementById('simulate-btn').addEventListener('click', triggerSimulation);
 });
+
+// ===== AGENTIC AI CHAT WIDGET ===== //
+const chatToggleBtn = document.getElementById('chat-toggle-btn');
+const closeChatBtn = document.getElementById('close-chat-btn');
+const chatWindow = document.getElementById('chat-window');
+const chatInput = document.getElementById('chat-input');
+const sendChatBtn = document.getElementById('send-chat-btn');
+const chatMessages = document.getElementById('chat-messages');
+
+function toggleChat() {
+  const isExpanded = chatToggleBtn.getAttribute('aria-expanded') === 'true';
+  if (isExpanded) {
+    chatWindow.classList.remove('active');
+    chatWindow.setAttribute('aria-hidden', 'true');
+    chatToggleBtn.setAttribute('aria-expanded', 'false');
+  } else {
+    chatWindow.classList.add('active');
+    chatWindow.setAttribute('aria-hidden', 'false');
+    chatToggleBtn.setAttribute('aria-expanded', 'true');
+    chatInput.focus();
+  }
+}
+
+chatToggleBtn.addEventListener('click', toggleChat);
+closeChatBtn.addEventListener('click', toggleChat);
+
+async function sendMessage() {
+  const query = chatInput.value.trim();
+  if (!query) return;
+
+  // Append user message
+  const userDiv = document.createElement('div');
+  userDiv.className = 'message user';
+  userDiv.innerText = query;
+  chatMessages.appendChild(userDiv);
+  chatInput.value = '';
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Append loading indicator
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'message bot loading';
+  loadingDiv.innerText = 'Thinking...';
+  chatMessages.appendChild(loadingDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  try {
+    const response = await fetch('/api/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query })
+    });
+    
+    const data = await response.json();
+    loadingDiv.remove();
+
+    if (response.ok && data.reply) {
+      const botDiv = document.createElement('div');
+      botDiv.className = 'message bot';
+      botDiv.innerText = data.reply;
+      chatMessages.appendChild(botDiv);
+    } else {
+      throw new Error(data.error || 'Server error');
+    }
+  } catch (error) {
+    loadingDiv.remove();
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'message bot';
+    errorDiv.innerText = 'Oops! I am having trouble connecting to the network right now.';
+    chatMessages.appendChild(errorDiv);
+    console.error("Chat Error:", error);
+  }
+  
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+sendChatBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') sendMessage();
+});
