@@ -13,13 +13,14 @@
 <body>
 
   <!-- Login Overlay -->
-  <div id="login-overlay" class="login-overlay">
+  <div id="login-overlay" class="login-overlay" role="dialog" aria-labelledby="login-title" aria-describedby="login-desc" aria-modal="true">
     <div class="login-box">
-      <h2>Welcome Attendee</h2>
-      <p>Please enter your e-Ticket ID to activate live tracking.</p>
-      <input type="text" id="ticket-input" placeholder="e.g., MODI-1234 or WANK-5678" />
-      <button id="login-btn" class="big-action-button">Activate Tracker</button>
-      <p id="login-error" class="login-error" style="display: none;">Invalid Ticket ID.</p>
+      <h2 id="login-title">Welcome Attendee</h2>
+      <p id="login-desc">Please enter your e-Ticket ID to activate live tracking.</p>
+      <label for="ticket-input" class="sr-only">e-Ticket ID</label>
+      <input type="text" id="ticket-input" placeholder="e.g., MODI-1234 or WANK-5678" aria-required="true" />
+      <button id="login-btn" class="big-action-button" aria-label="Activate Tracker">Activate Tracker</button>
+      <p id="login-error" class="login-error" style="display: none;" aria-live="assertive">Invalid Ticket ID. Try MODI-1234 or WANK-5678.</p>
     </div>
   </div>
 
