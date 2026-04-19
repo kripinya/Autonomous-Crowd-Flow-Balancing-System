@@ -1,9 +1,9 @@
 // ===== VENUE CONFIGURATION ===== //
-const STADIUM_CENTER = [51.556020, -0.279610];
+const STADIUM_CENTER = [23.0917, 72.5975]; // Narendra Modi Stadium, Ahmedabad
 const gateCoords = {
-  a: { name: 'North Gate', coords: [51.55734, -0.27964] },
-  b: { name: 'South Gate', coords: [51.55462, -0.27958] },
-  c: { name: 'East Gate', coords: [51.55610, -0.27645] },
+  a: { name: 'North Gate', coords: [23.0930, 72.5975] },
+  b: { name: 'South Gate', coords: [23.0900, 72.5975] },
+  c: { name: 'East Gate', coords: [23.0917, 72.6000] },
 };
 
 let map;

@@ -131,8 +131,8 @@ gates: Dict[str, Dict[str, Any]] = {
 }
 
 event_context: Dict[str, Any] = {
-    'phases': ['Pre-Match (Gate Open)', 'Kickoff (-15 mins)', 'Half-time Break', 'Post-Match (Egress)'],
-    'conditions': ['Clear Sky', 'Sudden Rain', 'Extreme Heat'],
+    'phases': ['Toss & Pre-Match', '1st Innings Powerplay', 'Innings Break', 'Post-Match (Egress)'],
+    'conditions': ['Clear & Humid', 'Unseasonal Rain', 'Extreme Heat'],
     'phase_idx': 0,
     'weather_idx': 0
 }
@@ -158,7 +158,7 @@ def evaluate_gate_with_llm(gate_data: Dict[str, Any], context: VenueContext) -> 
     if model:
         try:
             prompt = f"""
-            System: You are an expert Stadium Crowd Flow Manager.
+            System: You are an expert Stadium Crowd Flow Manager at a massive Indian cricket stadium.
             Input Data:
             - Gate: {gate_data['name']}
             - Density: {gate_data['density']}% (Capacity: 0-100)
@@ -205,14 +205,14 @@ def evaluate_gate_with_llm(gate_data: Dict[str, Any], context: VenueContext) -> 
     actions = ["Continue regular monitoring."]
     if risk == 'HIGH':
         actions = [
-            f"Offer 20% food voucher at other gates to divert traffic.",
-            f"Open secondary turnstiles immediately.",
-            f"Dispatch staff to {gate_data['name']}."
+            f"Offer 20% discount on Vada Pav and Biryani at other gates to divert traffic.",
+            f"Open secondary security checkpoints immediately.",
+            f"Dispatch rapid action staff to {gate_data['name']}."
         ]
     elif risk == 'MODERATE':
         actions = [
-            f"Prepare secondary turnstiles at {gate_data['name']}.",
-            f"Update digital signage to redirect incoming fans."
+            f"Prepare secondary checkpoints at {gate_data['name']}.",
+            f"Update digital Hindi/English signage to redirect incoming fans."
         ]
     
     return {
@@ -333,7 +333,7 @@ def agent_assistant():
     if model:
         try:
             prompt = f\"\"\"
-            You are an Agentic AI event assistant at a stadium. Your job is to help an attendee find the best way in.
+            You are an Agentic AI event assistant at an iconic Indian cricket stadium. Your job is to help attendees with queries about the stadium, routing, food, or general assistance.
             
             Current Venue Context: Phase: {ctx.phase}, Weather: {ctx.weather}
             Current Gate Status:
@@ -341,7 +341,7 @@ def agent_assistant():
             
             Attendee question: "{query_data.query}"
             
-            Provide a short, friendly, and highly specific recommendation for which gate they should head to based on the lowest density and queue. Keep it under 3 sentences.
+            Provide a short, friendly, and highly specific recommendation. If they ask for routing, suggest the least crowded gate. If they ask general questions, give a helpful, culturally relevant answer (e.g. mention stadium food like Biryani or Samosas if asked). Keep it under 3 sentences.
             \"\"\"
             response = model.generate_content(prompt)
             return jsonify({'reply': response.text.strip()})

@@ -47,7 +47,7 @@ def test_llm_fallback_heuristics(mock_model):
     ctx = VenueContext(phase="Kickoff", weather="Clear")
     decision = evaluate_gate_with_llm(gate_high, ctx)
     assert decision['risk'] == 'HIGH'
-    assert "Offer 20% food voucher" in decision['actions'][0]
+    assert "Offer 20% discount on Vada Pav and Biryani" in decision['actions'][0]
     
     # Test MODERATE risk heuristic
     gate_mod = {'id': 'a', 'name': 'North Gate', 'density': 50, 'inflow': 100, 'outflow': 20, 'queue': 200, 'streak': 0}
