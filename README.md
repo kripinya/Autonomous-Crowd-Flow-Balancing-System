@@ -1,10 +1,10 @@
-# Autonomous Crowd Flow Balancing System 🏟️🏏
+# Autonomous Crowd Flow Balancing System 
 
 **Hack2Skill Final Submission**
 
 This project is an advanced, fully autonomous **Smart Cricket Stadium Manager** powered by **Google Gemini 1.5 Flash**. It provides real-time, proactive crowd management and an immersive, personalized attendee experience using live GPS tracking.
 
-## 🌟 Key Features
+## Key Features
 
 ### 1. Agentic AI Attendee Assistant
 A floating chat widget powered by Google Gemini that acts as a culturally aware stadium assistant. It knows the live queue lengths at every gate, the weather, and the current match phase (e.g., "1st Innings Powerplay"). Attendees can ask natural language questions like *"Which gate is empty?"* or *"Where can I find Vada Pav?"*, and the AI will guide them intelligently.
@@ -28,7 +28,7 @@ The application dynamically adjusts its entire backend simulation and frontend m
 
 ---
 
-## 🚀 How to Use & Test the Project
+## How to Use & Test the Project
 
 1. **Access the Application**: Open the deployed URL provided in the Hack2Skill portal.
 2. **Log In**: You will be greeted by a modern login overlay. Enter one of the following mock e-Ticket IDs to load a specific stadium:
@@ -41,14 +41,14 @@ The application dynamically adjusts its entire backend simulation and frontend m
 
 ---
 
-## 🛠️ Technical Stack
+## Technical Stack
 * **Backend**: Python, Flask, Pydantic (Data Validation)
 * **AI Engine**: Google Generative AI (`gemini-1.5-flash`)
 * **Security**: Flask-Talisman (CSP/HSTS), Flask-Limiter (Rate Limiting)
 * **Frontend**: Vanilla JS, HTML5 Geolocation API, Leaflet.js
 * **Deployment**: Docker, Google Cloud Run
 
-## 🔒 Security & Code Quality
+## Security & Code Quality
 This project enforces enterprise-grade security and reliability:
 - Strict Pydantic schema validation for all telemetry to prevent data anomalies.
 - Heuristic logic fallbacks: If the AI API rate limits or fails, the system seamlessly falls back on hardcoded mathematical heuristics, ensuring 100% uptime.
