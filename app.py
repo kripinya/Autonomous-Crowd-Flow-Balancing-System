@@ -332,7 +332,7 @@ def agent_assistant():
     
     if model:
         try:
-            prompt = f\"\"\"
+            prompt = f"""
             You are an Agentic AI event assistant at an iconic Indian cricket stadium. Your job is to help attendees with queries about the stadium, routing, food, or general assistance.
             
             Current Venue Context: Phase: {ctx.phase}, Weather: {ctx.weather}
@@ -342,7 +342,7 @@ def agent_assistant():
             Attendee question: "{query_data.query}"
             
             Provide a short, friendly, and highly specific recommendation. If they ask for routing, suggest the least crowded gate. If they ask general questions, give a helpful, culturally relevant answer (e.g. mention stadium food like Biryani or Samosas if asked). Keep it under 3 sentences.
-            \"\"\"
+            """
             response = model.generate_content(prompt)
             return jsonify({'reply': response.text.strip()})
         except Exception as e:
