@@ -162,26 +162,45 @@ def evaluate_gate_with_llm(gate_data: Dict[str, Any], context: VenueContext) -> 
                 'prediction': ai_data.get('prediction', 'Analyzing...'),
                 'actions': ai_data.get('actions', ['Monitor situation.'])
             }
-        except Exception:
+        except Exception as e:
+            logger.error(f"LLM parsing or generation failed: {e}")
             pass
 
     risk = 'SAFE'
-    if gate_data['density'] > 75: risk = 'HIGH'
-    elif gate_data['density'] > 45: risk = 'MODERATE'
+    if gate_data['density'] > 75:
+        risk = 'HIGH'
+    elif gate_data['density'] > 45:
+        risk = 'MODERATE'
     
     actions = ["Continue regular monitoring."]
-    if risk == 'HIGH': actions = [f"Offer 20% discount on Vada Pav and Biryani at other gates.", f"Open secondary security checkpoints immediately.", f"Dispatch rapid action staff to {gate_data['name']}."]
-    elif risk == 'MODERATE': actions = [f"Prepare secondary checkpoints at {gate_data['name']}.", f"Update digital Hindi/English signage to redirect incoming fans."]
+    if risk == 'HIGH':
+        actions = [
+            f"Offer 20% discount on Vada Pav and Biryani at other gates.",
+            f"Open secondary security checkpoints immediately.",
+            f"Dispatch rapid action staff to {gate_data['name']}."
+        ]
+    elif risk == 'MODERATE':
+        actions = [
+            f"Prepare secondary checkpoints at {gate_data['name']}.",
+            f"Update digital Hindi/English signage to redirect incoming fans."
+        ]
     
-    return {'id': gate_data['id'], 'risk': risk, 'prediction': f"{gate_data['name']} is {risk.lower()} risk.", 'actions': actions}
+    return {
+        'id': gate_data['id'],
+        'risk': risk,
+        'prediction': f"{gate_data['name']} is {risk.lower()} risk.",
+        'actions': actions
+    }
 
 def simulate_step(stadium_id: str) -> None:
     s_data = stadiums_data.get(stadium_id, stadiums_data['modi'])
     ctx_data = s_data['context']
     gates = s_data['gates']
 
-    if random.random() < 0.2: ctx_data['weather_idx'] = random.randint(0, 2)
-    if random.random() < 0.1: ctx_data['phase_idx'] = (ctx_data['phase_idx'] + 1) % 4
+    if random.random() < 0.2:
+        ctx_data['weather_idx'] = random.randint(0, 2)
+    if random.random() < 0.1:
+        ctx_data['phase_idx'] = (ctx_data['phase_idx'] + 1) % 4
 
     ctx = get_current_context(stadium_id)
     
@@ -196,8 +215,10 @@ def simulate_step(stadium_id: str) -> None:
         g['density'] = clamp(g['density'] + round(diff * 0.2), 0, 100)
         g['queue'] = clamp(round(g['density'] * 1.8) + random.randint(-10, 10), 0, 300)
         
-        if g['inflow'] > g['outflow']: g['streak'] += 1
-        else: g['streak'] = max(0, g['streak'] - 1)
+        if g['inflow'] > g['outflow']:
+            g['streak'] += 1
+        else:
+            g['streak'] = max(0, g['streak'] - 1)
 
 def apply_rebalancing(stadium_id: str, decisions: List[Dict[str, Any]]) -> None:
     gates = stadiums_data.get(stadium_id, stadiums_data['modi'])['gates']
@@ -293,7 +314,8 @@ def agent_assistant():
             """
             response = model.generate_content(prompt)
             return jsonify({'reply': response.text.strip()})
-        except Exception:
+        except Exception as e:
+            logger.error(f"Agent generation failed: {e}")
             pass
             
     best_gate = min(gates.values(), key=lambda x: x['density'])

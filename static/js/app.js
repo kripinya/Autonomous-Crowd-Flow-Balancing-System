@@ -86,7 +86,9 @@ function initMap() {
 function updateMap(stateMap) {
   if (!map) return;
   for (const id of ['a', 'b', 'c']) {
-    if(!stateMap[id]) continue;
+    if(!stateMap[id]) {
+      continue;
+    }
     const state = stateMap[id];
     const circle = mapCircles[id];
     const color = getZoneColor(state.level);
@@ -152,7 +154,9 @@ function renderFeed(decisions, afterState) {
 
   let allSafe = true;
   for (const id of ['a', 'b', 'c']) {
-    if (afterState[id] && afterState[id].level !== 'Low') allSafe = false;
+    if (afterState[id] && afterState[id].level !== 'Low') {
+      allSafe = false;
+    }
   }
   resultSummary.innerText = allSafe ? `Everything will run smoothly!` : `Major crowding will drop significantly, keeping everyone safe.`;
 }
@@ -164,7 +168,9 @@ async function loadInitialState() {
     const data = await res.json();
     renderContext(data.context);
     updateMap(data.state);
-  } catch (err) { console.error("Error loading state:", err); }
+  } catch (err) {
+    console.error("Error loading state:", err);
+  }
 }
 
 async function triggerSimulation() {
@@ -264,7 +270,9 @@ async function sendMessage(queryText, isSystemWarning = false) {
       const botDiv = document.createElement('div');
       botDiv.className = 'message bot';
       botDiv.innerText = data.reply;
-      if (isSystemWarning) botDiv.style.borderLeft = "4px solid var(--danger)";
+      if (isSystemWarning) {
+        botDiv.style.borderLeft = "4px solid var(--danger)";
+      }
       chatMessages.appendChild(botDiv);
     } else if (!isSystemWarning) {
       throw new Error(data.error || 'Server error');
@@ -283,7 +291,11 @@ async function sendMessage(queryText, isSystemWarning = false) {
 }
 
 sendChatBtn.addEventListener('click', () => sendMessage());
-chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+chatInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
+});
 
 // ===== GPS TRACKING & PROXIMITY ===== //
 function startGPSTracking() {
