@@ -46,6 +46,11 @@ document.getElementById('login-btn').addEventListener('click', () => {
   initMap();
   loadInitialState();
   startGPSTracking();
+  
+  // Start automated live scanning every 15 seconds
+  if (simulationInterval) clearInterval(simulationInterval);
+  triggerSimulation(); // Run once immediately
+  simulationInterval = setInterval(triggerSimulation, 15000);
 });
 
 // ===== FRONTEND RENDERING CLIENT ===== //
@@ -107,7 +112,6 @@ function renderFeed(decisions, afterState) {
   const resultSummary = document.getElementById('result-summary');
   
   responseArea.style.display = 'block';
-  document.getElementById('simulate-btn').setAttribute('aria-expanded', 'true');
   document.querySelector('.simple-instruction').style.display = 'none';
   planList.innerHTML = '';
 
@@ -174,10 +178,6 @@ async function loadInitialState() {
 }
 
 async function triggerSimulation() {
-  const btn = document.getElementById('simulate-btn');
-  btn.disabled = true;
-  const originalText = btn.innerHTML;
-  btn.innerHTML = 'Scanning Stadium...';
   try {
     const res = await fetch(`/api/simulate?stadium_id=${currentStadiumId}`);
     const data = await res.json();
@@ -185,22 +185,19 @@ async function triggerSimulation() {
     updateMap(data.before);
     setTimeout(() => {
       renderFeed(data.decisions, data.after);
-      btn.innerHTML = 'Fixing Situation...';
       setTimeout(() => {
         updateMap(data.after);
-        btn.disabled = false;
-        btn.innerHTML = 'Scan Complete! Run Again?';
       }, 1500);
     }, 800);
   } catch (err) {
     console.error("Simulation failed:", err);
-    btn.disabled = false;
-    btn.innerHTML = originalText;
   }
 }
 
+let simulationInterval = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('simulate-btn').addEventListener('click', triggerSimulation);
+  // We don't start the interval here, we start it after login.
 });
 
 // ===== AGENTIC AI CHAT WIDGET ===== //
