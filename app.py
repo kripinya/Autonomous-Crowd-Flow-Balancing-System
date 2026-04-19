@@ -4,13 +4,7 @@ Autonomous Crowd Flow Balancing System (Enterprise Edition)
 
 An intelligent system leveraging Google Gemini 1.5 Flash to manage stadium crowd
 flows dynamically. Features production-grade security, structured logging, 
-validation, and LLM-driven decision engines.
-
-Criteria Addressed:
-- Google Services: Integrated Google Generative AI (Gemini) SDK with strict schema output.
-- Security: Flask-Talisman (CSP) and Flask-Limiter (Rate Limiting).
-- Code Quality: Pydantic Data Models, strict typing, and extensive documentation.
-- Efficiency: Optimized data structures, generator expressions, and multi-stage processing.
+validation, LLM-driven decision engines, and GPS tracking support.
 """
 
 import os
@@ -53,15 +47,13 @@ try:
     import google.cloud.logging
     g_client = google.cloud.logging.Client()
     g_client.setup_logging()
-    logger.info("Cloud Logging: Successfully connected to Google Cloud Logging.")
 except ImportError:
-    logger.info("Cloud Logging: Library not found, jumping to standard logging.")
+    pass
 except Exception as e:
-    logger.warning(f"Cloud Logging: Local environment detected, error: {e}")
+    pass
 
-# --- DATA MODELS (Pydantic for Data Integrity) ---
+# --- DATA MODELS ---
 class GateState(BaseModel):
-    """Pydantic model for validating the state of a stadium gate."""
     id: str
     name: str
     density: int = Field(ge=0, le=100)
@@ -71,94 +63,77 @@ class GateState(BaseModel):
     streak: int = Field(ge=0)
 
 class VenueContext(BaseModel):
-    """Pydantic model for the current environmental context."""
     phase: str
     weather: str
 
-class DecisionResponse(BaseModel):
-    """Pydantic model for LLM structured output parsing."""
-    risk: str
-    prediction: str
-    actions: List[str]
-
 class AgentQuery(BaseModel):
-    """Pydantic model for user chat queries."""
     query: str
+    stadium_id: str
+    user_location: Optional[str] = None
+    nearby_density: Optional[str] = None
 
 # --- APP INITIALIZATION ---
 app = Flask(__name__)
 
-# Security: Talisman for CSP and HSTS
 csp = {
     'default-src': '\'self\'',
-    'script-src': [
-        '\'self\'',
-        'https://unpkg.com',  # Leaflet
-        '\'unsafe-inline\''   # Needed for some local dynamic logic
-    ],
-    'style-src': [
-        '\'self\'',
-        'https://fonts.googleapis.com',
-        'https://unpkg.com',
-        '\'unsafe-inline\''
-    ],
+    'script-src': ['\'self\'', 'https://unpkg.com', '\'unsafe-inline\''],
+    'style-src': ['\'self\'', 'https://fonts.googleapis.com', 'https://unpkg.com', '\'unsafe-inline\''],
     'font-src': ['\'self\'', 'https://fonts.gstatic.com'],
     'img-src': ['\'self\'', 'data:', 'https://*.basemaps.cartocdn.com']
 }
 
-Talisman(
-    app, 
-    content_security_policy=csp,
-    force_https=False, # Set to True in production
-    strict_transport_security=True
-)
-
-# Security: Rate Limiting to prevent simulation abuse
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
+Talisman(app, content_security_policy=csp, force_https=False, strict_transport_security=True)
+limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"], storage_uri="memory://")
 
 # --- GLOBAL SIMULATION STATE ---
-CONGESTION_THRESHOLD: int = 3
-
-gates: Dict[str, Dict[str, Any]] = {
-    'a': {'id': 'a', 'name': 'North Gate', 'density': 28, 'inflow': 15, 'outflow': 18, 'queue': 12, 'streak': 0},
-    'b': {'id': 'b', 'name': 'South Gate', 'density': 55, 'inflow': 40, 'outflow': 32, 'queue': 47, 'streak': 0},
-    'c': {'id': 'c', 'name': 'East Gate', 'density': 87, 'inflow': 70, 'outflow': 45, 'queue': 134, 'streak': 0},
+stadiums_data = {
+    'modi': {
+        'name': 'Narendra Modi Stadium',
+        'context': {
+            'phases': ['Toss & Pre-Match', '1st Innings Powerplay', 'Innings Break', 'Post-Match (Egress)'],
+            'conditions': ['Clear & Humid', 'Unseasonal Rain', 'Extreme Heat'],
+            'phase_idx': 0,
+            'weather_idx': 0
+        },
+        'gates': {
+            'a': {'id': 'a', 'name': 'North Gate', 'density': 28, 'inflow': 15, 'outflow': 18, 'queue': 12, 'streak': 0},
+            'b': {'id': 'b', 'name': 'South Gate', 'density': 55, 'inflow': 40, 'outflow': 32, 'queue': 47, 'streak': 0},
+            'c': {'id': 'c', 'name': 'East Gate', 'density': 87, 'inflow': 70, 'outflow': 45, 'queue': 134, 'streak': 0},
+        }
+    },
+    'wankhede': {
+        'name': 'Wankhede Stadium',
+        'context': {
+            'phases': ['Toss & Pre-Match', '1st Innings Powerplay', 'Innings Break', 'Post-Match (Egress)'],
+            'conditions': ['Sea Breeze', 'Humid', 'Clear Night'],
+            'phase_idx': 0,
+            'weather_idx': 0
+        },
+        'gates': {
+            'a': {'id': 'a', 'name': 'Vinoo Mankad Gate', 'density': 40, 'inflow': 20, 'outflow': 10, 'queue': 25, 'streak': 0},
+            'b': {'id': 'b', 'name': 'Garware Pavilion Gate', 'density': 70, 'inflow': 50, 'outflow': 30, 'queue': 85, 'streak': 0},
+            'c': {'id': 'c', 'name': 'University Pavilion Gate', 'density': 90, 'inflow': 80, 'outflow': 40, 'queue': 150, 'streak': 0},
+        }
+    }
 }
 
-event_context: Dict[str, Any] = {
-    'phases': ['Toss & Pre-Match', '1st Innings Powerplay', 'Innings Break', 'Post-Match (Egress)'],
-    'conditions': ['Clear & Humid', 'Unseasonal Rain', 'Extreme Heat'],
-    'phase_idx': 0,
-    'weather_idx': 0
-}
-
-# --- LOGIC UTILITIES ---
-def get_current_context() -> VenueContext:
-    """Retrieves the current venue phase and weather context."""
+def get_current_context(stadium_id: str) -> VenueContext:
+    s_data = stadiums_data.get(stadium_id, stadiums_data['modi'])
+    ctx = s_data['context']
     return VenueContext(
-        phase=event_context['phases'][event_context['phase_idx']],
-        weather=event_context['conditions'][event_context['weather_idx']]
+        phase=ctx['phases'][ctx['phase_idx']],
+        weather=ctx['conditions'][ctx['weather_idx']]
     )
 
 def clamp(val: int, mn: int, mx: int) -> int:
-    """Clamps a value between a minimum and maximum threshold."""
     return max(mn, min(val, mx))
 
-# --- AI DECISION ENGINE ---
 def evaluate_gate_with_llm(gate_data: Dict[str, Any], context: VenueContext) -> Dict[str, Any]:
-    """
-    Attempts to use Gemini to reason about the crowd state using structured schema.
-    If the API call fails or is unavailable, falls back to heuristic logic.
-    """
     if model:
         try:
             prompt = f"""
-            System: You are an expert Stadium Crowd Flow Manager at a massive Indian cricket stadium.
+            System: You are an expert Stadium Crowd Flow Manager at an Indian cricket stadium.
             Input Data:
             - Gate: {gate_data['name']}
             - Density: {gate_data['density']}% (Capacity: 0-100)
@@ -173,11 +148,7 @@ def evaluate_gate_with_llm(gate_data: Dict[str, Any], context: VenueContext) -> 
             {{"risk": "...", "prediction": "...", "actions": ["...", "..."]}}
             Keep response extremely concise.
             """
-            
-            # Ensure prompt explicitly asks for strict JSON
             response = model.generate_content(prompt)
-            
-            # Robust JSON extraction for backward compatibility with older genai SDKs
             import json
             import re
             match = re.search(r'\{.*\}', response.text, re.DOTALL)
@@ -185,52 +156,34 @@ def evaluate_gate_with_llm(gate_data: Dict[str, Any], context: VenueContext) -> 
                 ai_data = json.loads(match.group())
             else:
                 ai_data = {}
-            
             return {
                 'id': gate_data['id'],
                 'risk': ai_data.get('risk', 'SAFE'),
                 'prediction': ai_data.get('prediction', 'Analyzing...'),
                 'actions': ai_data.get('actions', ['Monitor situation.'])
             }
-        except Exception as e:
-            logger.error(f"AI Generation Error: {e}. Falling back to heuristics.")
+        except Exception:
+            pass
 
-    # HEURISTIC FALLBACK (Ensures system never crashes)
     risk = 'SAFE'
-    if gate_data['density'] > 75:
-        risk = 'HIGH'
-    elif gate_data['density'] > 45:
-        risk = 'MODERATE'
+    if gate_data['density'] > 75: risk = 'HIGH'
+    elif gate_data['density'] > 45: risk = 'MODERATE'
     
     actions = ["Continue regular monitoring."]
-    if risk == 'HIGH':
-        actions = [
-            f"Offer 20% discount on Vada Pav and Biryani at other gates to divert traffic.",
-            f"Open secondary security checkpoints immediately.",
-            f"Dispatch rapid action staff to {gate_data['name']}."
-        ]
-    elif risk == 'MODERATE':
-        actions = [
-            f"Prepare secondary checkpoints at {gate_data['name']}.",
-            f"Update digital Hindi/English signage to redirect incoming fans."
-        ]
+    if risk == 'HIGH': actions = [f"Offer 20% discount on Vada Pav and Biryani at other gates.", f"Open secondary security checkpoints immediately.", f"Dispatch rapid action staff to {gate_data['name']}."]
+    elif risk == 'MODERATE': actions = [f"Prepare secondary checkpoints at {gate_data['name']}.", f"Update digital Hindi/English signage to redirect incoming fans."]
     
-    return {
-        'id': gate_data['id'],
-        'risk': risk,
-        'prediction': f"{gate_data['name']} is {risk.lower()} risk based on current capacity.",
-        'actions': actions
-    }
+    return {'id': gate_data['id'], 'risk': risk, 'prediction': f"{gate_data['name']} is {risk.lower()} risk.", 'actions': actions}
 
-# --- SIMULATION ENGINE ---
-def simulate_step() -> None:
-    """Advances the simulation by one time-step, updating weather and densities."""
-    if random.random() < 0.2:
-        event_context['weather_idx'] = random.randint(0, 2)
-    if random.random() < 0.1:
-        event_context['phase_idx'] = (event_context['phase_idx'] + 1) % 4
+def simulate_step(stadium_id: str) -> None:
+    s_data = stadiums_data.get(stadium_id, stadiums_data['modi'])
+    ctx_data = s_data['context']
+    gates = s_data['gates']
 
-    ctx = get_current_context()
+    if random.random() < 0.2: ctx_data['weather_idx'] = random.randint(0, 2)
+    if random.random() < 0.1: ctx_data['phase_idx'] = (ctx_data['phase_idx'] + 1) % 4
+
+    ctx = get_current_context(stadium_id)
     
     for gid, g in gates.items():
         in_mod = 25 if "Pre-Match" in ctx.phase else 0
@@ -243,13 +196,11 @@ def simulate_step() -> None:
         g['density'] = clamp(g['density'] + round(diff * 0.2), 0, 100)
         g['queue'] = clamp(round(g['density'] * 1.8) + random.randint(-10, 10), 0, 300)
         
-        if g['inflow'] > g['outflow']:
-            g['streak'] += 1
-        else:
-            g['streak'] = max(0, g['streak'] - 1)
+        if g['inflow'] > g['outflow']: g['streak'] += 1
+        else: g['streak'] = max(0, g['streak'] - 1)
 
-def apply_rebalancing(decisions: List[Dict[str, Any]]) -> None:
-    """Reflects human/AI interventions in the simulation state."""
+def apply_rebalancing(stadium_id: str, decisions: List[Dict[str, Any]]) -> None:
+    gates = stadiums_data.get(stadium_id, stadiums_data['modi'])['gates']
     for d in decisions:
         g = gates[d['id']]
         if d['risk'] == 'HIGH':
@@ -258,34 +209,29 @@ def apply_rebalancing(decisions: List[Dict[str, Any]]) -> None:
         elif d['risk'] == 'MODERATE':
             g['density'] = clamp(g['density'] - 10, 5, 100)
 
-# --- ROUTES ---
 @app.route('/')
 def index() -> str:
-    """Renders the main dashboard."""
     return render_template('index.html')
 
 @app.route('/api/simulate')
-@limiter.limit("10 per minute")
+@limiter.limit("20 per minute")
 def simulate():
-    """Triggers a simulation step, queries the AI, and applies changes."""
-    simulate_step()
-    ctx = get_current_context()
+    sid = request.args.get('stadium_id', 'modi')
+    simulate_step(sid)
+    ctx = get_current_context(sid)
     
-    # Store before state
+    gates = stadiums_data.get(sid, stadiums_data['modi'])['gates']
     before = {gid: {**g} for gid, g in gates.items()}
     
     decisions = []
     for gid, g in gates.items():
         try:
-            # Validate integrity of telemetry data
             valid_gate = GateState(**g)
             decisions.append(evaluate_gate_with_llm(valid_gate.model_dump(), ctx))
-        except ValidationError as e:
-            logger.error(f"Data Anomaly in gate {gid}: {e}")
-            # Even if validation fails, try heuristic fallback with raw data
+        except ValidationError:
             decisions.append(evaluate_gate_with_llm(g, ctx))
             
-    apply_rebalancing(decisions)
+    apply_rebalancing(sid, decisions)
     
     return jsonify({
         'context': f"Context: {ctx.phase} — {ctx.weather}",
@@ -296,70 +242,70 @@ def simulate():
 
 @app.route('/api/state')
 def current_state():
-    """Returns the current state of the venue."""
-    ctx = get_current_context()
+    sid = request.args.get('stadium_id', 'modi')
+    ctx = get_current_context(sid)
+    gates = stadiums_data.get(sid, stadiums_data['modi'])['gates']
     return jsonify({
         'context': f"Context: {ctx.phase} — {ctx.weather}",
         'state': snap_states(gates)
     })
 
 def snap_states(data_source: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
-    """Calculates risk levels and snaps state data for frontend consumption."""
-    def get_level(density: int) -> str:
-        if density > 75:
-            return 'High'
-        if density > 45:
-            return 'Medium'
-        return 'Low'
-        
     return {
-        gid: {**g, 'level': get_level(g['density'])} 
+        gid: {**g, 'level': 'High' if g['density'] > 75 else ('Medium' if g['density'] > 45 else 'Low')} 
         for gid, g in data_source.items()
     }
 
 @app.route('/api/agent', methods=['POST'])
-@limiter.limit("20 per minute")
+@limiter.limit("30 per minute")
 def agent_assistant():
-    """Agentic AI endpoint for attendee route assistance."""
     try:
         data = request.get_json() or {}
         query_data = AgentQuery(**data)
-    except ValidationError as e:
+    except ValidationError:
         return jsonify(error="Invalid query format"), 400
 
-    ctx = get_current_context()
+    sid = query_data.stadium_id
+    ctx = get_current_context(sid)
+    gates = stadiums_data.get(sid, stadiums_data['modi'])['gates']
+    stadium_name = stadiums_data.get(sid, stadiums_data['modi'])['name']
     gate_info = "\\n".join([f"- {g['name']}: {g['density']}% density, Queue: {g['queue']} people" for g in gates.values()])
     
+    # Handle automated proximity warnings
+    if getattr(query_data, 'nearby_density', None) and getattr(query_data, 'user_location', None):
+        if int(query_data.nearby_density) > 70:
+            best_gate = min(gates.values(), key=lambda x: x['density'])
+            return jsonify({'reply': f"URGENT: High crowd density detected near your GPS location ({query_data.nearby_density}% local density). Please route immediately towards {best_gate['name']} for safety."})
+        elif int(query_data.nearby_density) < 30 and not query_data.query:
+            return jsonify({'reply': ''}) # Ignore safe background checks
+            
     if model:
         try:
             prompt = f"""
-            You are an Agentic AI event assistant at an iconic Indian cricket stadium. Your job is to help attendees with queries about the stadium, routing, food, or general assistance.
-            
-            Current Venue Context: Phase: {ctx.phase}, Weather: {ctx.weather}
-            Current Gate Status:
+            You are an Agentic AI event assistant at {stadium_name}.
+            Current Context: {ctx.phase}, Weather: {ctx.weather}
+            Gates:
             {gate_info}
+            User GPS Proximity Info: {query_data.nearby_density}% local density.
+            Question: "{query_data.query}"
             
-            Attendee question: "{query_data.query}"
-            
-            Provide a short, friendly, and highly specific recommendation. If they ask for routing, suggest the least crowded gate. If they ask general questions, give a helpful, culturally relevant answer (e.g. mention stadium food like Biryani or Samosas if asked). Keep it under 3 sentences.
+            Provide a short, friendly recommendation. If asked about crowds, warn them based on their proximity info and route them to the least crowded gate. Keep it under 3 sentences.
             """
             response = model.generate_content(prompt)
             return jsonify({'reply': response.text.strip()})
-        except Exception as e:
-            logger.error(f"Agent Chat Error: {e}")
+        except Exception:
+            pass
             
-    # Heuristic fallback
     best_gate = min(gates.values(), key=lambda x: x['density'])
-    reply = f"Hi there! Right now, the best way to get in is the {best_gate['name']}. It only has a {best_gate['queue']} person queue. Head there for the fastest entry!"
+    reply = f"Hi there! Based on live crowds, head to {best_gate['name']}."
+    if getattr(query_data, 'nearby_density', None) and int(query_data.nearby_density) > 70:
+        reply = f"WARNING: Crowds are very heavy around you. Please move to {best_gate['name']} immediately."
+        
     return jsonify({'reply': reply})
 
-# --- ERROR HANDLERS ---
 @app.errorhandler(429)
 def ratelimit_handler(e):
-    """Graceful handling of rate limits for security."""
     return jsonify(error="Rate limit exceeded", description=str(e)), 429
 
 if __name__ == '__main__':
-    # Use environment provided port or default to 5000
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

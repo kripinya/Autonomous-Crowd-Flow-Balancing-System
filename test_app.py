@@ -4,7 +4,7 @@ Achieves comprehensive coverage across core logic, security, routing, and AI fal
 """
 import pytest
 from unittest.mock import MagicMock, patch
-from app import app, GateState, evaluate_gate_with_llm, VenueContext, simulate_step, apply_rebalancing, gates
+from app import app, GateState, evaluate_gate_with_llm, VenueContext, simulate_step, apply_rebalancing, stadiums_data
 
 @pytest.fixture
 def client():
@@ -61,7 +61,8 @@ def test_llm_fallback_heuristics(mock_model):
 
 def test_simulation_engine():
     """Validates the math in the simulation engine."""
-    simulate_step()
+    simulate_step('modi')
+    gates = stadiums_data['modi']['gates']
     # Ensure properties stay within reasonable bounds
     for g in gates.values():
         assert 0 <= g['density'] <= 100
@@ -71,6 +72,7 @@ def test_simulation_engine():
 
 def test_apply_rebalancing():
     """Validates that automated intervention corrects crowd states."""
+    gates = stadiums_data['modi']['gates']
     gates['a']['density'] = 90
     gates['b']['density'] = 50
     gates['c']['density'] = 20
@@ -81,7 +83,7 @@ def test_apply_rebalancing():
         {'id': 'c', 'risk': 'SAFE', 'prediction': '', 'actions': []}
     ]
     
-    apply_rebalancing(decisions)
+    apply_rebalancing('modi', decisions)
     
     assert gates['a']['density'] == 70  # reduced by 20
     assert gates['b']['density'] == 40  # reduced by 10
@@ -89,12 +91,12 @@ def test_apply_rebalancing():
 
 def test_api_endpoints(client):
     """Validates core API accessibility and structural response integrity."""
-    rv = client.get('/api/state')
+    rv = client.get('/api/state?stadium_id=modi')
     assert rv.status_code == 200
     assert 'state' in rv.get_json()
 
     # Disable rate limits for this simulate test
-    rv = client.get('/api/simulate')
+    rv = client.get('/api/simulate?stadium_id=modi')
     assert rv.status_code == 200
     data = rv.get_json()
     assert 'before' in data
@@ -113,12 +115,12 @@ def test_rate_limiting():
     app.config['TESTING'] = False
     
     with app.test_client() as client:
-        # Assuming simulate allows 10 per minute
-        for _ in range(10):
+        # Assuming simulate allows 20 per minute
+        for _ in range(20):
             rv = client.get('/api/simulate')
             assert rv.status_code == 200
             
-        # The 11th should fail with 429
+        # The 21st should fail with 429
         rv = client.get('/api/simulate')
         assert rv.status_code == 429
         assert "Rate limit exceeded" in rv.get_json()['error']
@@ -130,7 +132,7 @@ def test_agent_api_endpoint(mock_model, client):
     mock_response.text = "You should head to the South Gate."
     mock_model.generate_content.return_value = mock_response
 
-    rv = client.post('/api/agent', json={'query': 'Where should I go?'})
+    rv = client.post('/api/agent', json={'query': 'Where should I go?', 'stadium_id': 'modi'})
     assert rv.status_code == 200
     data = rv.get_json()
     assert 'reply' in data
@@ -141,13 +143,13 @@ def test_agent_api_fallback(mock_model, client):
     """Verifies the heuristic fallback for the Agentic AI works if LLM fails."""
     mock_model.generate_content.side_effect = Exception("API Outage")
     
+    gates = stadiums_data['modi']['gates']
     # Set densities so we know which gate should be recommended
     gates['a']['density'] = 90
     gates['b']['density'] = 10
     gates['c']['density'] = 50
     
-    rv = client.post('/api/agent', json={'query': 'Which gate is best?'})
+    rv = client.post('/api/agent', json={'query': 'Which gate is best?', 'stadium_id': 'modi'})
     assert rv.status_code == 200
     data = rv.get_json()
     assert 'South Gate' in data['reply']  # 'b' is South Gate
-
