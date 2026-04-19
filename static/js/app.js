@@ -80,6 +80,7 @@ function renderFeed(decisions, afterState) {
   const resultSummary = document.getElementById('result-summary');
   
   responseArea.style.display = 'block';
+  document.getElementById('simulate-btn').setAttribute('aria-expanded', 'true');
   document.querySelector('.simple-instruction').style.display = 'none';
   planList.innerHTML = '';
 
