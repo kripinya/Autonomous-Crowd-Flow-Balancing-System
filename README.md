@@ -1,37 +1,55 @@
-# 🌐 Autonomous Crowd Flow Balancing Assistant
+# Autonomous Crowd Flow Balancing System 🏟️🏏
 
-## 📌 Problem Statement
-Large venues and events often struggle with uneven crowd distribution, leading to severe bottlenecks at specific gates while others remain underutilized. This imbalance creates safety risks, poor visitor experiences, and operational inefficiencies. Manual monitoring is often too slow to prevent sudden congestion spikes.
+**Hack2Skill Final Submission**
 
-## 💡 Solution Overview
-The **Autonomous Crowd Flow Balancing Assistant** is an AI-powered simulation dashboard designed to mitigate congestion proactively. It monitors crowd density, queue lengths, and flow rates across multiple venue gates. By continuously analyzing these metrics, the system's decision engine automatically detects congestion risks and prescribes actionable balancing strategies before critical thresholds are reached.
+This project is an advanced, fully autonomous **Smart Cricket Stadium Manager** powered by **Google Gemini 1.5 Flash**. It provides real-time, proactive crowd management and an immersive, personalized attendee experience using live GPS tracking.
 
-## ✨ Key Features
-- **Real-time Crowd Analysis:** Monitors dynamic metrics including density, queue lengths, inflow, and outflow rates per gate.
-- **Predictive Congestion Detection:** Predicts bottlenecks by tracking net-positive inflow streaks before they escalate to critical levels.
-- **AI Decision Assistant:** Employs a deterministic rule-based engine to generate structured alerts, predictions, and crowd redirection actions based on risk classifications.
-- **Closed-Loop Simulation:** Demonstrates the impact of AI suggestions by running a feedback loop that applies actions to balance flow and visibly reduces high-density spots in real-time.
-- **Visual Venue Map:** Provides a geographical visualization of the event space with dynamic, color-coded markers pulsing according to real-time density levels.
+## 🌟 Key Features
 
-## ⚙️ How it Works
-The simulation operates on a continual **Input → Analysis → Decision → Feedback** cycle:
-1. **Input:** Simulated radar/camera feeds provide raw density, inflow, and outflow data per gate.
-2. **Analysis:** The engine evaluates net-inflow streaks and categorizes gates into SAFE, MODERATE, or HIGH-risk zones.
-3. **Decision:** Generates targeted actions (e.g., redirecting foot traffic, deploying staff, adjusting entry pacing).
-4. **Feedback (After State):** The system applies these actions, rebalancing the venue. High-risk areas show immediate density reduction, while safe areas absorb redirected traffic.
+### 1. Agentic AI Attendee Assistant
+A floating chat widget powered by Google Gemini that acts as a culturally aware stadium assistant. It knows the live queue lengths at every gate, the weather, and the current match phase (e.g., "1st Innings Powerplay"). Attendees can ask natural language questions like *"Which gate is empty?"* or *"Where can I find Vada Pav?"*, and the AI will guide them intelligently.
 
-## 📝 Assumptions
-- **Simulated Data:** The system relies on randomized mock data bounds rather than live API integrations or raw camera feeds.
-- **Simplified Model:** Crowd pacing, psychological factors, and complex spatial physics are abstracted out for the sake of the dashboard demonstration.
-- **Instantaneous Action Impact:** The simulation demonstrates the "After" effect immediately, whereas real-world crowd redirection introduces slight latency (e.g., walk time).
+### 2. Live GPS Tracking (with Hackathon Offset)
+Instead of a static dashboard, attendees log in with their e-Ticket to activate live HTML5 Geolocation tracking. 
+* **Hackathon Magic:** Since judges and testers aren't physically at the stadiums, we built a "Hackathon Offset" algorithm. It takes your real-world movements (walking around your room) and proportionally maps them into the stadium bounds on the interactive Leaflet map!
 
-## 🛠 Tech Stack
-- **HTML5:** Clean, semantic document structure.
-- **CSS3:** Custom properties, CSS Grid/Flexbox layouts, dark-mode styling, and minimal animations (no external CSS frameworks).
-- **Vanilla JavaScript (ES6+):** Complete simulation loop, rule-based decision engine, and DOM manipulation without heavy libraries.
+### 3. Proactive Automated Warnings & Heatmaps
+The frontend calculates your Euclidean distance to heavily congested gates. If you walk into a dense area:
+- Red "heat dots" dynamically spawn around you, simulating the tracking of nearby Bluetooth/WiFi beacons.
+- If the local density exceeds a critical threshold, the Agentic AI chatbot will automatically pop open, flash red, and push an unprompted **URGENT** warning with instructions to head to the safest exit!
 
-## 🚀 Future Improvements
-- **Live Data Integration:** Connect to real-world IoT sensors, camera APIs, or entry turnstile databases to ingest live visitor telemetry.
-- **Complex Topologies:** Expand the simplified single-connector structure into a multi-node spatial graph with real transit times.
-- **Advanced Predictive Models:** Replace the deterministic rule-based logic with a trained Machine Learning model to account for historical traffic patterns and weather context.
-- **Mobile Companion App:** Develop an attendee-facing view that automatically notifies visitors of the fastest/safest entry routes.
+### 4. Automated Global Rebalancing
+The command center dashboard requires zero manual intervention. Every 15 seconds, the backend automatically scans the stadium's telemetry and queries Gemini to predict risks. If a gate becomes overcrowded, it instantly deploys dynamic strategies (e.g., "Offer 20% discount on Biryani at East Gate") to rebalance the crowds.
+
+### 5. Multi-Stadium Support
+The application dynamically adjusts its entire backend simulation and frontend map rendering based on the user's ticket:
+- Support for **Narendra Modi Stadium** (Ahmedabad)
+- Support for **Wankhede Stadium** (Mumbai)
+
+---
+
+## 🚀 How to Use & Test the Project
+
+1. **Access the Application**: Open the deployed URL provided in the Hack2Skill portal.
+2. **Log In**: You will be greeted by a modern login overlay. Enter one of the following mock e-Ticket IDs to load a specific stadium:
+   - Type **`MODI-1234`** to load the Narendra Modi Stadium.
+   - Type **`WANK-5678`** to load the Wankhede Stadium.
+3. **Allow Location**: When prompted by your browser, **Allow** location access. This activates the Live GPS tracker.
+4. **Watch the Automation**: You don't need to click anything. Watch the dashboard automatically scan the stadium every 15 seconds, identify risks, and fix them.
+5. **Test the Chatbot**: Open the chat widget in the bottom right. Ask it *"Which is the best way in right now?"*.
+6. **Trigger Proactive Warnings**: Stand up with your laptop or phone and physically walk around your room! Watch your blue dot move across the stadium. As you walk toward a red, congested gate, the Agentic AI will automatically pop open and warn you to turn around.
+
+---
+
+## 🛠️ Technical Stack
+* **Backend**: Python, Flask, Pydantic (Data Validation)
+* **AI Engine**: Google Generative AI (`gemini-1.5-flash`)
+* **Security**: Flask-Talisman (CSP/HSTS), Flask-Limiter (Rate Limiting)
+* **Frontend**: Vanilla JS, HTML5 Geolocation API, Leaflet.js
+* **Deployment**: Docker, Google Cloud Run
+
+## 🔒 Security & Code Quality
+This project enforces enterprise-grade security and reliability:
+- Strict Pydantic schema validation for all telemetry to prevent data anomalies.
+- Heuristic logic fallbacks: If the AI API rate limits or fails, the system seamlessly falls back on hardcoded mathematical heuristics, ensuring 100% uptime.
+- PEP-8 compliant formatting and comprehensive docstrings.
